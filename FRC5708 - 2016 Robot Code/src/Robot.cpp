@@ -279,17 +279,23 @@ private:
 		int currentRight = encRight.Get() - initValueRight;
 		DEGREE_GROUP = POV/90 % 4;
 		switch(DEGREE_GROUP){
-			case 1:
+			case 0:
 				POVCurrent = PovState::UP;
 				break;
-			case 2:
-				POVCurrent = PovState::RIGHT;
-				break;
 			case 3:
+				POVCurrent = PovState::RIGHT;
+				if(Mode == Driving){
+					DRIVE_SPEED++;
+				}
+				break;
+			case 2:
 				POVCurrent = PovState::DOWN;
 				break;
-			case 4:
+			case 1:
 				POVCurrent = PovState::LEFT;
+				if(Mode == Driving){
+					DRIVE_SPEED--;
+				}
 				break;
 		}
 
@@ -312,6 +318,7 @@ private:
 		DriveControl();
 		ShooterControl();
 		loaderControl();
+		LinAcControl();
 		if (Mode == Driving){
 			DRIVE_SPEED = 1;
 			dirsgn = -1;
@@ -328,16 +335,16 @@ private:
 	}
 	void DriveControl()
 	{
-			float valX = -stick.GetX();
+		float valX = -stick.GetX();
 	        float valY = stick.GetY();
 	        float val_switch = ballSwitch.Get();
-			SmartDashboard::PutNumber("X: ", valX);
-			SmartDashboard::PutNumber("Switch: ", val_switch);
+		SmartDashboard::PutNumber("X: ", valX);
+		SmartDashboard::PutNumber("Switch: ", val_switch);
 
-			float left_speed = (valY + valX) * DRIVE_SPEED;
-			float right_speed = (valY - valX) * DRIVE_SPEED;
-			left.Set(-left_speed*dirsgn);
-			right.Set(right_speed*dirsgn);
+		float left_speed = (valY + valX) * DRIVE_SPEED;
+		float right_speed = (valY - valX) * DRIVE_SPEED;
+		left.Set(-left_speed*dirsgn);
+		right.Set(right_speed*dirsgn);
 	}
 
 	void loaderControl()
