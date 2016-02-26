@@ -6,7 +6,7 @@
 float const SPEED_STOP = 0.0;
 float const SPEED_MOVE = .25;
 int const Node_Path[3] = {1,1,1}; //CHANGE THIS BASED ON FIELD!
-float const Obstical_Length = 1;
+float const Obstacle_Length = 1;
 float const LENGTH_TO_BALL = 1;
 float const Auto_Fire_Pitch = 1;
 enum{Turn1, Drive1, Turn2, Drive2, Turn3, Drive3, Turn4, Pitch, fire, DO_NOTHING};
@@ -76,8 +76,8 @@ class Robot: public IterativeRobot
 	float Locations[7] = {
 			StartLoc[Node_Path[1]][1],
 			StartLoc[Node_Path[1]][2],
-			MidLoc[Node_Path[2]][1]-(Obstical_Length/2),
-			MidLoc[Node_Path[2]][1]+(Obstical_Length/2),
+			MidLoc[Node_Path[2]][1]-(Obstacle_Length/2),
+			MidLoc[Node_Path[2]][1]+(Obstacle_Length/2),
 			MidLoc[Node_Path[2]][2],
 			EndLoc[Node_Path[3]][1],
 			EndLoc[Node_Path[3]][2]
@@ -98,7 +98,7 @@ class Robot: public IterativeRobot
 
 	double Distances[3] = {
 			sqrt((StartX-MidX1)*(StartX-MidX1)+(StartY-MidY)*(StartY-MidY)),
-			Obstical_Length,
+			Obstacle_Length,
 			sqrt((MidX2-EndX)*(MidX2-EndX)+(MidY-EndY)*(MidY-EndY))
 	};
 
