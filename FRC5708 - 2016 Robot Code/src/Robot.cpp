@@ -15,9 +15,16 @@ int const COUNTS_PER_REV = 280;	//Number of counters per revolution of encoder
 float const ENCODER_SCALE_FACTOR = 3.1416 * WHEEL_DIAMETER / COUNTS_PER_REV; //[cm/cnt]
 float const RADIANS_PER_COUNT = 1;
 float const RPC_LINAC = 1;
-float const Obstical_Length = 1;
-int const ShooterTime = 1;
-bool ShooterAc = false;
+float const OBSTICAL_LENGTH = 1;
+int const SHOOTER_TIMER = 1;
+bool SHOOTER_AC = false;
+float const FLIPPER_SPEED = 1.0;
+float const LIN_AC_SPEED = 1.0;
+float const LOAD_LEFT_SPEED = -1.0;
+float const LOAD_RIGHT_SPEED = 1.0;
+float const SHOOT_LEFT_SPEED = 1.0;
+float const SHOOT_RIGHT_SPEED = -1.0;
+
 
 
 class Robot: public IterativeRobot
@@ -50,7 +57,7 @@ class Robot: public IterativeRobot
 		1,//moat
 		1,//rockwall
 		1,//ramparts
-	};	
+	};
 	Joystick stick; // only joystick
 	Victor left;
 	Victor right;
@@ -61,12 +68,15 @@ class Robot: public IterativeRobot
 	Encoder encLeft;
 	Encoder encRight;
 	Encoder encGun;
+	Encoder encFlipper;
 	DigitalInput ballSwitch;
 	LiveWindow *lw;
 	DigitalOutput Light;
 	int POV = stick.GetPOV();//d-pad position
 	int initValueLeft;
 	int initValueRight;
+	int initValueFlipper;
+	int initValueGun;
 	int autoLoopCounter;
 	int autoModeStatus = Drive1;
 	int Mode = Driving;
@@ -85,8 +95,8 @@ class Robot: public IterativeRobot
 	float Locations[7] = {
 			StartLoc[Node_Path[1]][1],
 			StartLoc[Node_Path[1]][2],
-			MidLoc[Node_Path[2]][1]-(Obstical_Length/2),
-			MidLoc[Node_Path[2]][1]+(Obstical_Length/2),
+			MidLoc[Node_Path[2]][1]-(OBSTICAL_LENGTH/2),
+			MidLoc[Node_Path[2]][1]+(OBSTICAL_LENGTH/2),
 			MidLoc[Node_Path[2]][2],
 			EndLoc[Node_Path[3]][1],
 			EndLoc[Node_Path[3]][2]
@@ -132,7 +142,8 @@ public:
 		encLeft(0,1),//Digital
 		encRight(2,3),
 		encGun(4,5),
-		ballSwitch(6),
+		encFlipper(6,7),
+		ballSwitch(8),
 		lw(LiveWindow::GetInstance()),
 		Light(7)
 	{
@@ -274,10 +285,10 @@ private:
 					RotCount++;
 					break;
 				case fire:
-					if(RotCount<ShooterTime)
-						ShooterAc = true;
+					if(RotCount<SHOOTER_TIMER)
+						SHOOTER_AC = true;
 					else{
-						ShooterAc = false;
+						SHOOTER_AC = false;
 						autoModeStatus = DO_NOTHING;}
 					break;
 				case DO_NOTHING:
@@ -291,6 +302,9 @@ private:
 	{
 		initValueLeft = encLeft.Get();
 		initValueRight = encRight.Get();
+		initValueFlipper = encFlipper.Get();
+		initValueGun = encGun.Get();
+		initValueFlipper = encFlipper.Get();
 		ShootCounter = 5;
 	}
 
@@ -298,6 +312,8 @@ private:
 	{
 		int currentLeft = encLeft.Get() - initValueLeft;
 		int currentRight = encRight.Get() - initValueRight;
+		int currentGun = encGun.Get() - initValueGun;
+		int currentFlipper = encFlipper.Get() - initValueFlipper;
 		DEGREE_GROUP = POV/90 % 4;
 		switch(DEGREE_GROUP){
 			case 0:
@@ -336,6 +352,8 @@ private:
 
 		SmartDashboard::PutNumber("LeftEncoder", currentLeft);
 		SmartDashboard::PutNumber("RightEncoder", currentRight);
+		SmartDashboard::PutNumber("GunAngle: ", currentGun);
+		SmartDashboard::PutNumber("FlipperAngle: ", currentFlipper);
 		DriveControl();
 		ShooterControl();
 		loaderControl();
@@ -374,8 +392,8 @@ private:
 	//bool load = -stick.GetY();
 
 	if(load){
-		ShooterLeft.Set(-1.0);
-		ShooterRight.Set(1.0);}
+		ShooterLeft.Set(LOAD_LEFT_SPEED);
+		ShooterRight.Set(LOAD_RIGHT_SPEED);}
 	else{
 		ShooterLeft.Set(0.0);
 		ShooterRight.Set(0.0);}
@@ -385,25 +403,25 @@ private:
 	{
 
 	if(POVCurrent == PovState::UP){
-		LinAc.Set(1.0);}
+		LinAc.Set(LIN_AC_SPEED);}
 	else{
 		if(POVCurrent == PovState::DOWN){
-			LinAc.Set(-1.0);}
+			LinAc.Set(-LIN_AC_SPEED);}
 	}};
 
 	void ShooterControl()
 	{
-			bool Shoot = Fire or ShooterAc;
-
+			bool Shoot = Fire or SHOOTER_AC;
+			//int encf = encFlipper.Get();
 			if(Shoot){
-				ShooterLeft.Set(1.0);
-				ShooterRight.Set(-1.0);
+				ShooterLeft.Set(SHOOT_LEFT_SPEED);
+				ShooterRight.Set(SHOOT_RIGHT_SPEED);
 				if(ShootCounter>1){
-					FireBall.Set(1.0);}
+					FireBall.Set(FLIPPER_SPEED);}
 				else{ if(ShootCounter<=1 and ShootCounter >-1){
 					FireBall.Set(0.0);}
 				if(ShootCounter<-1){
-					FireBall.Set(-1.0);
+					FireBall.Set(-FLIPPER_SPEED);
 				}
 					}
 					ShootCounter--;}
