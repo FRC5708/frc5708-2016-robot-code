@@ -17,6 +17,7 @@ float const RADIANS_PER_COUNT = 1;
 float const RPC_LINAC = 1;
 float const OBSTICAL_LENGTH = 1;
 int const SHOOTER_TIMER = 1;
+int const FLIPPER_TIMER = 1;
 bool SHOOTER_AC = false;
 float const FLIPPER_SPEED = 1.0;
 float const LIN_AC_SPEED = 1.0;
@@ -24,6 +25,7 @@ float const LOAD_LEFT_SPEED = -1.0;
 float const LOAD_RIGHT_SPEED = 1.0;
 float const SHOOT_LEFT_SPEED = 1.0;
 float const SHOOT_RIGHT_SPEED = -1.0;
+int const FLIPPER_START = 1;
 
 
 
@@ -91,6 +93,7 @@ class Robot: public IterativeRobot
 	bool ToggleLight = stick.GetRawButton(4);
 	bool Fire = stick.GetRawButton(6);
 	bool Load = stick.GetRawButton(5);
+	bool HasRisen = false;
 
 	float Locations[7] = {
 			StartLoc[Node_Path[1]][1],
@@ -306,6 +309,7 @@ private:
 		initValueGun = encGun.Get();
 		initValueFlipper = encFlipper.Get();
 		ShootCounter = 5;
+		HasRisen = false;
 	}
 
 	void TeleopPeriodic()
@@ -412,23 +416,23 @@ private:
 	void ShooterControl()
 	{
 			bool Shoot = Fire or SHOOTER_AC;
-			//int encf = encFlipper.Get();
+			int encf = encFlipper.Get();
 			if(Shoot){
 				ShooterLeft.Set(SHOOT_LEFT_SPEED);
 				ShooterRight.Set(SHOOT_RIGHT_SPEED);
-				if(ShootCounter>1){
+				if(ShootCounter<FLIPPER_TIMER and !HasRisen){
 					FireBall.Set(FLIPPER_SPEED);}
-				else{ if(ShootCounter<=1 and ShootCounter >-1){
-					FireBall.Set(0.0);}
-				if(ShootCounter<-1){
-					FireBall.Set(-FLIPPER_SPEED);
-				}
-					}
-					ShootCounter--;}
 				else{
-					ShooterLeft.Set(0.0);
-					ShooterRight.Set(0.0);
-					ShootCounter = 5 ;}
+					HasRisen = true;
+					if(encf>FLIPPER_START)
+					FireBall.Set(-FLIPPER_SPEED);
+					}
+			}
+			else{
+				ShooterLeft.Set(0.0);
+				ShooterRight.Set(0.0);
+				ShootCounter = 5 ;
+				HasRisen = false;}
 	}
 };
 
