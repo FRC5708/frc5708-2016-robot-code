@@ -5,9 +5,7 @@
 
 float const SPEED_STOP = 0.0;
 float const SPEED_MOVE = .25;
-int const Node_Path[3] = {1,1,1}; //CHANGE THIS BASED ON FIELD!
-float const Obstacle_Length = 1;
-float const LENGTH_TO_BALL = 1;
+int const Node_Path[4] = {1,1,1,1}; //CHANGE THIS BASED ON FIELD!
 float const Auto_Fire_Pitch = 1;
 enum{Turn1, Drive1, Turn2, Drive2, Turn3, Drive3, Turn4, Pitch, fire, DO_NOTHING};
 enum{Shooting, Driving};
@@ -16,6 +14,10 @@ float const WHEEL_DIAMETER = 16.51*2;
 int const COUNTS_PER_REV = 280;	//Number of counters per revolution of encoder
 float const ENCODER_SCALE_FACTOR = 3.1416 * WHEEL_DIAMETER / COUNTS_PER_REV; //[cm/cnt]
 float const RADIANS_PER_COUNT = 1;
+float const RPC_LINAC = 1;
+float const Obstical_Length = 1;
+int const ShooterTime = 1;
+bool ShooterAc = false;
 
 
 class Robot: public IterativeRobot
@@ -42,6 +44,13 @@ class Robot: public IterativeRobot
 			1,
 			1
 	};
+	float EncDataObst[5]{ //encoder data per crossabe obstical
+		1,//lowbar
+		1,//rough terrain
+		1,//moat
+		1,//rockwall
+		1,//ramparts
+	};	
 	Joystick stick; // only joystick
 	Victor left;
 	Victor right;
@@ -76,8 +85,8 @@ class Robot: public IterativeRobot
 	float Locations[7] = {
 			StartLoc[Node_Path[1]][1],
 			StartLoc[Node_Path[1]][2],
-			MidLoc[Node_Path[2]][1]-(Obstacle_Length/2),
-			MidLoc[Node_Path[2]][1]+(Obstacle_Length/2),
+			MidLoc[Node_Path[2]][1]-(Obstical_Length/2),
+			MidLoc[Node_Path[2]][1]+(Obstical_Length/2),
 			MidLoc[Node_Path[2]][2],
 			EndLoc[Node_Path[3]][1],
 			EndLoc[Node_Path[3]][2]
@@ -98,7 +107,7 @@ class Robot: public IterativeRobot
 
 	double Distances[3] = {
 			sqrt((StartX-MidX1)*(StartX-MidX1)+(StartY-MidY)*(StartY-MidY)),
-			Obstacle_Length,
+			EncDataObst[Node_Path[4]],
 			sqrt((MidX2-EndX)*(MidX2-EndX)+(MidY-EndY)*(MidY-EndY))
 	};
 
@@ -200,7 +209,7 @@ private:
 					RotCount++;
 					break;
 				case Drive2:
-					if(averageLeftRight * ENCODER_SCALE_FACTOR < Distances[2])
+					if(averageLeftRight < Distances[2])
 						{
 							left.Set(-SPEED_MOVE);
 							right.Set(SPEED_MOVE);
@@ -251,19 +260,31 @@ private:
 						left.Set(SPEED_STOP);
 						right.Set(SPEED_STOP);
 						autoModeStatus = Pitch;
+						RotCount = 0;
 					}
 					RotCount++;
 					break;
 				case Pitch:
-					autoModeStatus = fire;
+					if(RotCount*RPC_LINAC < Auto_Fire_Pitch){
+						LinAc.Set(1.0);
+					}else{
+						autoModeStatus = fire;
+						RotCount = 0;
+					}
+					RotCount++;
 					break;
 				case fire:
-					autoModeStatus = DO_NOTHING;
+					if(RotCount<ShooterTime)
+						ShooterAc = true;
+					else{
+						ShooterAc = false;
+						autoModeStatus = DO_NOTHING;}
 					break;
 				case DO_NOTHING:
 					break;
 			}
 			autoLoopCounter++;
+			ShooterControl();
 		}
 
 	void TeleopInit()
@@ -372,18 +393,18 @@ private:
 
 	void ShooterControl()
 	{
-				bool Shoot = Fire;
+			bool Shoot = Fire or ShooterAc;
 
-				if(Shoot){
-					ShooterLeft.Set(1.0);
-					ShooterRight.Set(-1.0);
-					if(ShootCounter>1){
-						FireBall.Set(1.0);}
-					else{ if(ShootCounter<=1 and ShootCounter >-1){
-						FireBall.Set(0.0);}
-						if(ShootCounter<-1){
-							FireBall.Set(-1.0);
-						}
+			if(Shoot){
+				ShooterLeft.Set(1.0);
+				ShooterRight.Set(-1.0);
+				if(ShootCounter>1){
+					FireBall.Set(1.0);}
+				else{ if(ShootCounter<=1 and ShootCounter >-1){
+					FireBall.Set(0.0);}
+				if(ShootCounter<-1){
+					FireBall.Set(-1.0);
+				}
 					}
 					ShootCounter--;}
 				else{
