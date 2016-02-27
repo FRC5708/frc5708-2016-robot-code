@@ -26,6 +26,8 @@ float const LOAD_RIGHT_SPEED = 1.0;
 float const SHOOT_LEFT_SPEED = 1.0;
 float const SHOOT_RIGHT_SPEED = -1.0;
 int const FLIPPER_START = 1;
+int const ARM_MAX = 1;
+int const ARM_MIN = 1;
 
 
 
@@ -405,12 +407,17 @@ private:
 
 	void LinAcControl()
 	{
-
-	if(POVCurrent == PovState::UP){
+	int encg = encGun.Get();
+	if(POVCurrent == PovState::UP and encg<ARM_MAX and encg >ARM_MIN ){
 		LinAc.Set(LIN_AC_SPEED);}
 	else{
 		if(POVCurrent == PovState::DOWN){
 			LinAc.Set(-LIN_AC_SPEED);}
+		if(encg<ARM_MAX or encg>ARM_MIN){
+			SmartDashboard::PutBoolean("Gun Limit Reached: ",true);
+		}else{
+			SmartDashboard::PutBoolean("Gun Limit Reached: ",false);
+		}
 	}};
 
 	void ShooterControl()
